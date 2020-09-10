@@ -1,0 +1,202 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kubernetes.io/psp: eks.privileged
+  creationTimestamp: "2020-09-10T20:37:09Z"
+  generateName: conjur-follower-68b88d874c-
+  labels:
+    app: conjur-follower
+    name: conjur-follower
+    pod-template-hash: 68b88d874c
+    role: follower
+  name: conjur-follower-68b88d874c-dvm4m
+  namespace: conjur-follower
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: conjur-follower-68b88d874c
+    uid: ca6b1738-fa1f-41b8-ad31-9afe72b2d1ae
+  resourceVersion: "12710262"
+  selfLink: /api/v1/namespaces/conjur-follower/pods/conjur-follower-68b88d874c-dvm4m
+  uid: db923969-ec61-4b5d-850e-6d9868072ee1
+spec:
+  containers:
+  - command:
+    - /tmp/seedfile/start-follower.sh
+    env:
+    - name: CONJUR_AUTHENTICATORS
+      value: authn-k8s/conjur-authenticator
+    - name: SEEDFILE_DIR
+      value: /tmp/seedfile
+    image: 080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/conjur-appliance:conjur-follower
+    imagePullPolicy: Always
+    name: conjur-appliance
+    ports:
+    - containerPort: 443
+      name: https
+      protocol: TCP
+    - containerPort: 636
+      name: ldaps
+      protocol: TCP
+    - containerPort: 5432
+      name: pg-main
+      protocol: TCP
+    - containerPort: 5433
+      name: pg-audit
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /health
+        port: 443
+        scheme: HTTPS
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /tmp/seedfile
+      name: seedfile
+      readOnly: true
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: conjur-cluster-token-95mnx
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  imagePullSecrets:
+  - name: dockerpullsecret
+  initContainers:
+  - env:
+    - name: CONJUR_SEED_FILE_URL
+      value: ./follower-seed.tar
+    - name: SEEDFILE_DIR
+      value: /tmp/seedfile
+    - name: FOLLOWER_HOSTNAME
+      value: conjur-follower
+    - name: AUTHENTICATOR_ID
+      value: conjur-authenticator
+    - name: CONJUR_ACCOUNT
+      value: deloittepilot
+    - name: CONJUR_SSL_CERTIFICATE
+      valueFrom:
+        configMapKeyRef:
+          key: ssl-certificate
+          name: server-certificate
+    - name: MY_POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
+    - name: MY_POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.namespace
+    - name: MY_POD_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.podIP
+    - name: CONJUR_AUTHN_LOGIN
+      value: host/conjur/authn-k8s/conjur-authenticator/apps/conjur-follower/service_account/conjur-cluster
+    image: 080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/seed-fetcher:conjur-follower
+    imagePullPolicy: Always
+    name: authenticator
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /tmp/seedfile
+      name: seedfile
+    - mountPath: /run/conjur
+      name: conjur-token
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: conjur-cluster-token-95mnx
+      readOnly: true
+  nodeName: ip-192-168-53-49.ap-southeast-2.compute.internal
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: conjur-cluster
+  serviceAccountName: conjur-cluster
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - emptyDir:
+      medium: Memory
+    name: seedfile
+  - emptyDir:
+      medium: Memory
+    name: conjur-token
+  - name: conjur-cluster-token-95mnx
+    secret:
+      defaultMode: 420
+      secretName: conjur-cluster-token-95mnx
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2020-09-10T20:37:11Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2020-09-10T20:37:44Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2020-09-10T20:37:44Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2020-09-10T20:37:09Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: docker://e44d344f7e1502991847e50d8999b16e9fccc95103886f1d779f2a7550cadc24
+    image: 080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/conjur-appliance:conjur-follower
+    imageID: docker-pullable://080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/conjur-appliance@sha256:6a7547697b2943e3f1f44a514248d3a33d207360e9bc2e4b662b6c13d9c2b36b
+    lastState: {}
+    name: conjur-appliance
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2020-09-10T20:37:11Z"
+  hostIP: 192.168.53.49
+  initContainerStatuses:
+  - containerID: docker://3a63017cb971649568af068afb681f6779c8158551d8fd2714477867599ff7bf
+    image: 080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/seed-fetcher:conjur-follower
+    imageID: docker-pullable://080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/seed-fetcher@sha256:937a89562cddf2d231552c3aba6a851976262b29d957a1f546059dc6fd94ed26
+    lastState: {}
+    name: authenticator
+    ready: true
+    restartCount: 0
+    state:
+      terminated:
+        containerID: docker://3a63017cb971649568af068afb681f6779c8158551d8fd2714477867599ff7bf
+        exitCode: 0
+        finishedAt: "2020-09-10T20:37:10Z"
+        reason: Completed
+        startedAt: "2020-09-10T20:37:10Z"
+  phase: Running
+  podIP: 192.168.48.48
+  podIPs:
+  - ip: 192.168.48.48
+  qosClass: BestEffort
+  startTime: "2020-09-10T20:37:09Z"
+

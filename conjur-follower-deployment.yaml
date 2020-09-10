@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  creationTimestamp: "2020-09-10T20:37:09Z"
+  generation: 1
+  labels:
+    app: conjur-follower
+  name: conjur-follower
+  namespace: conjur-follower
+  resourceVersion: "12710265"
+  selfLink: /apis/apps/v1/namespaces/conjur-follower/deployments/conjur-follower
+  uid: c68c4c04-e265-4664-bcbd-4a4c652370cf
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: conjur-follower
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: conjur-follower
+        name: conjur-follower
+        role: follower
+    spec:
+      containers:
+      - command:
+        - /tmp/seedfile/start-follower.sh
+        env:
+        - name: CONJUR_AUTHENTICATORS
+          value: authn-k8s/conjur-authenticator
+        - name: SEEDFILE_DIR
+          value: /tmp/seedfile
+        image: 080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/conjur-appliance:conjur-follower
+        imagePullPolicy: Always
+        name: conjur-appliance
+        ports:
+        - containerPort: 443
+          name: https
+          protocol: TCP
+        - containerPort: 636
+          name: ldaps
+          protocol: TCP
+        - containerPort: 5432
+          name: pg-main
+          protocol: TCP
+        - containerPort: 5433
+          name: pg-audit
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 443
+            scheme: HTTPS
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp/seedfile
+          name: seedfile
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: dockerpullsecret
+      initContainers:
+      - env:
+        - name: CONJUR_SEED_FILE_URL
+          value: ./follower-seed.tar
+        - name: SEEDFILE_DIR
+          value: /tmp/seedfile
+        - name: FOLLOWER_HOSTNAME
+          value: conjur-follower
+        - name: AUTHENTICATOR_ID
+          value: conjur-authenticator
+        - name: CONJUR_ACCOUNT
+          value: deloittepilot
+        - name: CONJUR_SSL_CERTIFICATE
+          valueFrom:
+            configMapKeyRef:
+              key: ssl-certificate
+              name: server-certificate
+        - name: MY_POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: MY_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: CONJUR_AUTHN_LOGIN
+          value: host/conjur/authn-k8s/conjur-authenticator/apps/conjur-follower/service_account/conjur-cluster
+        image: 080097767956.dkr.ecr.ap-southeast-2.amazonaws.com/conjur-follower/seed-fetcher:conjur-follower
+        imagePullPolicy: Always
+        name: authenticator
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp/seedfile
+          name: seedfile
+        - mountPath: /run/conjur
+          name: conjur-token
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: conjur-cluster
+      serviceAccountName: conjur-cluster
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir:
+          medium: Memory
+        name: seedfile
+      - emptyDir:
+          medium: Memory
+        name: conjur-token
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2020-09-10T20:37:44Z"
+    lastUpdateTime: "2020-09-10T20:37:44Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  - lastTransitionTime: "2020-09-10T20:37:09Z"
+    lastUpdateTime: "2020-09-10T20:37:44Z"
+    message: ReplicaSet "conjur-follower-68b88d874c" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  observedGeneration: 1
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

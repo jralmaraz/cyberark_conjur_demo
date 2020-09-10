@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2020-09-10T20:37:09Z"
+  labels:
+    app: conjur-follower
+  name: conjur-follower
+  namespace: conjur-follower
+  resourceVersion: "12710061"
+  selfLink: /api/v1/namespaces/conjur-follower/services/conjur-follower
+  uid: b5f9496e-9639-4350-b1cd-efccb7e6641f
+spec:
+  clusterIP: 10.100.151.96
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  - name: ldaps
+    port: 636
+    protocol: TCP
+    targetPort: 636
+  selector:
+    app: conjur-follower
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}
